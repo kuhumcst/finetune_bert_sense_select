@@ -78,8 +78,8 @@ def main(k_folds, batch_size, num_epochs, training, testing=None,
         print(f'Train-evaluation loss: {train_loss}')
         print(f'Train accuracy: {100 * train_accuracy}')
 
-        save_checkpoint('sensembed/models/checkpoints/model_bert.pt', model, train_loss)
-        save_metrics('sensembed/models/checkpoints/metrics_bert.pt',
+        save_checkpoint('sense_tune/model/checkpoints/model_bert.pt', model, train_loss)
+        save_metrics('sense_tune/model/checkpoints/metrics_bert.pt',
                      train_loss, loss, n_steps)
 
         print('loading test')
@@ -157,8 +157,8 @@ def main(k_folds, batch_size, num_epochs, training, testing=None,
             print(f'Test accuracy for fold {fold}: {100 * test_accuracy}')
             test_results[fold] = 100.0 * test_accuracy
 
-            save_checkpoint('sensembed/models/checkpoints' + '/model_' + str(fold) + '.pt', model, train_loss)
-            save_metrics('sensembed/models/checkpoints' '/metrics_' + str(fold) + '.pt',
+            save_checkpoint('sense_tune/model/checkpoints' + '/model_' + str(fold) + '.pt', model, train_loss)
+            save_metrics('sense_tune/model/checkpoints/metrics_' + str(fold) + '.pt',
                          train_loss_list, valid_loss_list, global_steps_list)
 
             print('--------------------------------')
