@@ -141,7 +141,7 @@ def main(k_folds, batch_size, num_epochs, training, testing=None,
             global_steps_list.append(n_steps)
 
             print('\nEvaluating model on training...')
-            train_loss, train_accuracy = evaluate(model, train_loader, device)
+            train_loss, train_accuracy = 0,0#evaluate(model, train_loader, device)
             train_results[fold] = 100.0 * train_accuracy
             valid_loss_list.append(train_loss)
 
