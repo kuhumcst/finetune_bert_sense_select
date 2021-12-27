@@ -37,14 +37,14 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
             if isinstance(model, BertSense):
                 for batch in batches:
-                    logits = forward(model, batch, device)
+                    logits = forward(model, batch[2:], device)
 
-                    targets = torch.max(batch[3].to(device), -1).indices.to(device).detach()
+                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                     batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                     # logits = model.sigmoid(logits)
-                    batch_loss += bin_loss_function(logits, batch[3].to(torch.float).to(device))
+                    batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
             else:
                 batch = torch.stack([b[0] for b in batches])
                 labels = torch.stack([l[1] for l in batches])
@@ -98,7 +98,7 @@ def evaluate(model, eval_dataloader, device):
         model.eval()
         with torch.no_grad():
 
-            labels = batches[0][3] if isinstance(model, BertSense) else [b[1] for b in batches]
+            labels = batches[0][5] if isinstance(model, BertSense) else [b[1] for b in batches]
 
             # run model
             batch_loss = 0
@@ -106,8 +106,8 @@ def evaluate(model, eval_dataloader, device):
 
             if isinstance(model, BertSense):
                 for batch in batches:
-                    logits = forward(model, batch, device)
-                    targets = torch.max(batch[3].to(device), -1).indices.to(device).detach()
+                    logits = forward(model, batch[2:], device)
+                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                     batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
             else:
@@ -128,6 +128,8 @@ def evaluate(model, eval_dataloader, device):
 
         if 1 in labels[prediction]:
             accuracy += 1
+        else:
+            print(batches[0][0], batches[0][1])
         nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
