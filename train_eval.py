@@ -157,8 +157,8 @@ if __name__ == "__main__":
         test = None
         reduction = sys.argv[6]
     else:
-        test = sys.argv[7]
-        reduction = sys.argv[8]
+        test = sys.argv[6]
+        reduction = sys.argv[7]
 
     main(batch_size=int(sys.argv[2]),
          num_epochs=int(sys.argv[3]),
