@@ -25,6 +25,7 @@ def get_BERT_score(data):
 
         model.eval()
         with torch.no_grad():
+            print(batches)
 
             labels = batches[0][5] #if isinstance(model, BertSense) else [b[1] for b in batches]
 
