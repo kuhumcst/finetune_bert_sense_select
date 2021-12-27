@@ -12,7 +12,7 @@ def save_checkpoint(path, model, valid_loss):
 def load_checkpoint(path, model, device):
     state_dict = torch.load(path, map_location=device)
     print(f'Loaded model from: {path}')
-
+    print(state_dict.keys())
     model.load_state_dict(state_dict['model_state_dict'])
     return model, state_dict['valid_loss']
 
