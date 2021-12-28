@@ -1,7 +1,8 @@
 import torch
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from sense_tune.load_data.sense_select import Sense_Selection_Data, SentDataset
+from sense_tune.load_data.sense_select import Sense_Selection_Data, SentDataset, collate_batch
 from sense_tune.model.bert import forward, get_model_and_tokenizer
 
 
@@ -10,9 +11,13 @@ def get_BERT_score(data):
 
     model, tokenizer = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
                                                device,
-                                               checkpoint='sense_tune/model/checkpoints/model_bert.pt')
+                                               checkpoint=None)#"'sense_tune/model/checkpoints/model_bert.pt')
 
-    dataloader = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
+    reduction = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
+    dataloader = DataLoader(reduction,
+                            batch_size=1,
+                            shuffle=False,
+                            collate_fn=collate_batch)
 
     nb_eval_steps = 0
     score = {}
@@ -32,6 +37,7 @@ def get_BERT_score(data):
             # run model
             for batch in batches:
                 logits = forward(model, batch[2:], device)
+                logits = model.softmax(logits)
                 score[batch[1]] = logits
 
         nb_eval_steps += 1

@@ -2,6 +2,7 @@ from collections import namedtuple
 from typing import List
 import torch
 
+
 class Sense_Selection_Data(List):
     def __init__(self, data, tokenizer, max_seq_length=254, pad_token=0,
                  mask_zero_padding=True,
@@ -40,13 +41,12 @@ class Sense_Selection_Data(List):
 
             sequences = [(sent2, 1 if i == row.target else 0) for i, sent2 in enumerate(row.examples)]
 
-            #lab_1 = [str(i) for i, sent2 in enumerate(row.examples) if str(i) in row.target]
+            # lab_1 = [str(i) for i, sent2 in enumerate(row.examples) if str(i) in row.target]
 
-
-            #for lab in lab_1:
+            # for lab in lab_1:
             pairs = []
             for ind, (sent2, label) in enumerate(sequences):
-                #if ind != int(lab) and label == 1:
+                # if ind != int(lab) and label == 1:
                 #   continue
                 tokens_b = tokenizer.tokenize(sent2)
 
@@ -96,10 +96,12 @@ class Sense_Selection_Data(List):
 
     def load_reduction_data(self, data, tokenizer):
         datapoints = []
-        BertInput = namedtuple("BertInput", ["input_ids", "input_mask", "segment_ids", "label_id"])
-        pairs = []
+        BertInput = namedtuple("BertInput", ["lemma", "row",
+                                             "input_ids", "input_mask",
+                                             "segment_ids", "label_id"])
 
         for row in data.itertuples():
+            pairs = []
             tokens_a = tokenizer.tokenize(row.sentence_1)
             tokens_b = tokenizer.tokenize(row.sentence_2)
 
@@ -130,13 +132,14 @@ class Sense_Selection_Data(List):
             assert len(input_mask) == self.max_seq_length
             assert len(segment_ids) == self.max_seq_length
 
-            pairs.append(BertInput(input_ids=input_ids,
+            pairs.append(BertInput(lemma=row.lemma,
+                                   row=row.Index,
+                                   input_ids=input_ids,
                                    input_mask=input_mask,
                                    segment_ids=segment_ids,
                                    label_id=row.label))
 
             datapoints.append(pairs)
-            pairs = []
 
         return datapoints
 
@@ -167,11 +170,11 @@ def collate_batch(batch):
 
 
 class SentDataset(torch.utils.data.Dataset):
-  def __init__(self, data):
-    self.data = data
+    def __init__(self, data):
+        self.data = data
 
-  def __getitem__(self, index):
-    return self.data[index]
+    def __getitem__(self, index):
+        return self.data[index]
 
-  def __len__(self):
-    return len(self.data)
+    def __len__(self):
+        return len(self.data)
