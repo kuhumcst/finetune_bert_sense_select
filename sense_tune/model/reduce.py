@@ -20,7 +20,7 @@ def get_BERT_score(data):
                             collate_fn=collate_batch)
 
     nb_eval_steps = 0
-    score = {}
+    score = []
 
     iterator = tqdm(dataloader, desc="Iteration")
 
@@ -38,7 +38,7 @@ def get_BERT_score(data):
             for batch in batches:
                 logits = forward(model, batch[2:], device)
                 logits = model.softmax(logits)
-                score[batch[1]] = logits
+                score.append(logits)
 
         nb_eval_steps += 1
 

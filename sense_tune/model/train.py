@@ -6,7 +6,7 @@ from sense_tune.model.bert import BertSense, forward
 
 
 def train(model, train_dataloader, device, learning_rate=1e-4,
-          num_epochs=5, max_steps=1, max_grad_norm=1.0):
+          num_epochs=5, max_steps=20000, max_grad_norm=1.0):
     """ Fine-tune the model """
     if max_steps > 0:
         max_steps
@@ -106,7 +106,7 @@ def evaluate(model, eval_dataloader, device):
 
             if isinstance(model, BertSense):
                 for batch in batches:
-                    logits = forward(model, batch[2:], device)
+                    logits = model.softmax(forward(model, batch[2:], device))
                     targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                     batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
@@ -128,8 +128,8 @@ def evaluate(model, eval_dataloader, device):
 
         if 1 in labels[prediction]:
             accuracy += 1
-        else:
-            print(batches[0][0], batches[0][1])
+        #else:
+            #print(batches[0][0], batches[0][1])
         nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
