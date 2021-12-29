@@ -106,7 +106,7 @@ def evaluate(model, eval_dataloader, device):
 
             if isinstance(model, BertSense):
                 for batch in batches:
-                    logits = model.softmax(forward(model, batch[2:], device))
+                    logits = forward(model, batch[2:], device)
                     targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                     batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
