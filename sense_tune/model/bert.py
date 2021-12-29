@@ -13,7 +13,6 @@ class BertSense(BertPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.relu = torch.nn.ReLU()
         self.out = torch.nn.Linear(config.hidden_size, 1)
-        self.softmax = torch.nn.Softmax()
         self.init_weights()
 
 

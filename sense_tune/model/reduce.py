@@ -37,11 +37,11 @@ def get_BERT_score(data):
             # run model
             for batch in batches:
                 logits = forward(model, batch[2:], device)
-                logits = model.softmax(logits)
                 score.append(logits)
 
         nb_eval_steps += 1
 
+    score = model.softmax(score)
     data['score'] = score
 
     return data
