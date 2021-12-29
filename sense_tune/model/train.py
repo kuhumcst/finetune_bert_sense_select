@@ -6,7 +6,7 @@ from sense_tune.model.bert import BertSense, forward
 
 
 def train(model, train_dataloader, device, learning_rate=1e-4,
-          num_epochs=5, max_steps=20000, max_grad_norm=1.0):
+          num_epochs=5, max_steps=0, max_grad_norm=1.0):
     """ Fine-tune the model """
     if max_steps > 0:
         max_steps
