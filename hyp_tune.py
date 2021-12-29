@@ -15,7 +15,7 @@ def main(num_epochs, training, testing):
     # Set fixed random number seed
     # torch.manual_seed(42)
 
-    for learning_rate in [0.00003, 0.00002]:
+    for learning_rate in [0.00002]:
 
         model_name = 'Maltehb/danish-bert-botxo'
         model, tokenizer = get_model_and_tokenizer(model_name, device)
