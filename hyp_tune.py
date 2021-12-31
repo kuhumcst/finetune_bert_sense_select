@@ -71,6 +71,6 @@ def main(num_epochs, train_set, test_set):
 
 if __name__ == "__main__":
     main(num_epochs=int(sys.argv[2]),
-         training=utils.load_datapoints_from_path(sys.argv[3], sys.argv[1]),
-         testing=utils.load_datapoints_from_path(sys.argv[4], sys.argv[1])  # sys.argv[1])
+         train_set=utils.load_datapoints_from_path(sys.argv[3], sys.argv[1]),
+         test_set=utils.load_datapoints_from_path(sys.argv[4], sys.argv[1])  # sys.argv[1])
          )
