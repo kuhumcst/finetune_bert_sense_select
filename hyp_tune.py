@@ -44,7 +44,7 @@ def main(num_epochs, train_set, test_set):
                                   device,
                                   learning_rate=learning_rate,
                                   num_epochs=1,
-                                  max_steps=20000)
+                                  max_steps=0)
 
             print(f'Total number of training steps: {n_steps}')
             print(f'Training loss: {loss}')
