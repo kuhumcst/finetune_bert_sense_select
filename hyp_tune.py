@@ -9,19 +9,19 @@ from sense_tune.model.save_checkpoints import save_checkpoint, save_metrics
 from sense_tune.model.train import train, evaluate
 
 
-def main(num_epochs, training, testing):
+def main(num_epochs, train_set, test_set):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set fixed random number seed
     # torch.manual_seed(42)
 
-    for learning_rate in [0.00002]:
+    for learning_rate in [0.00002, 0.00003, 0.00005, 0.00007, 0.0001]:
 
         model_name = 'Maltehb/danish-bert-botxo'
         model, tokenizer = get_model_and_tokenizer(model_name, device)
 
         print('Loading data...')
-        training = SentDataset(Sense_Selection_Data(training, tokenizer))
+        training = SentDataset(Sense_Selection_Data(train_set, tokenizer))
 
         train_loader = DataLoader(training,
                                  batch_size=1,
@@ -29,7 +29,7 @@ def main(num_epochs, training, testing):
                                  collate_fn=collate_batch)
 
         print('Loading test')
-        testing = SentDataset(Sense_Selection_Data(testing, tokenizer))
+        testing = SentDataset(Sense_Selection_Data(test_set, tokenizer))
         test_loader = DataLoader(testing,
                                  batch_size=1,
                                  shuffle=False,
