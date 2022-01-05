@@ -41,8 +41,6 @@ def get_BERT_score(data):
 
         nb_eval_steps += 1
 
-    softmax = torch.nn.Softmax(dim=0)
-    score = softmax(torch.tensor(score))
     data['score'] = score
 
     return data
