@@ -38,7 +38,7 @@ def main(k_folds, num_epochs, training, testing=None,
 
         data_loader = DataLoader(training,
                                  batch_size=batch_size,
-                                 shuffle=False,
+                                 shuffle=True,
                                  collate_fn=collate_batch)
 
         print('Training model...\n')
