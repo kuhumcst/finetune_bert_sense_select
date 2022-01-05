@@ -41,7 +41,7 @@ def get_BERT_score(data):
 
         nb_eval_steps += 1
 
-    data['score'] = score
+    data['score'] = torch.tensor(score)
 
     return data
 
