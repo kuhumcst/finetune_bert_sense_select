@@ -21,8 +21,8 @@ def k_fold_results(results: dict):
     print(f'Average: {total / len(results.items())} %')
 
 
-def main(k_folds, batch_size, num_epochs, training, testing=None,
-         learning_rate=0.00002):
+def main(k_folds, num_epochs, training, testing=None,
+         learning_rate=0.00002, batch_size=1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set fixed random number seed
@@ -38,7 +38,7 @@ def main(k_folds, batch_size, num_epochs, training, testing=None,
 
         data_loader = DataLoader(training,
                                  batch_size=batch_size,
-                                 shuffle=True,
+                                 shuffle=False,
                                  collate_fn=collate_batch)
 
         print('Training model...\n')
@@ -160,13 +160,13 @@ if __name__ == "__main__":
         test = sys.argv[6]
         reduction = sys.argv[7]
 
-    main(batch_size=int(sys.argv[2]),
-         num_epochs=int(sys.argv[3]),
+    main(num_epochs=int(sys.argv[3]),
          k_folds=int(sys.argv[4]),
          training=utils.load_datapoints_from_path(sys.argv[5], sys.argv[1]),
          testing=utils.load_datapoints_from_path(test, sys.argv[1])  # sys.argv[1])
          )
 
+    run_id = str(sys.argv[2]),
     reduction_data = pd.read_csv(reduction, sep='\t', index_col=0)
     reduction_data_score = get_BERT_score(reduction_data)
-    reduction_data_score.to_csv('/content/drive/MyDrive/SPECIALE/data/reduction_score.tsv', sep='\t')
+    reduction_data_score.to_csv(f'/content/drive/MyDrive/SPECIALE/data/reduction_score_{run_id}.tsv', sep='\t')
