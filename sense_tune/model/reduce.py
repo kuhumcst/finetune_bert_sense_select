@@ -11,7 +11,7 @@ def get_BERT_score(data):
 
     model, tokenizer = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
                                                device,
-                                               checkpoint=None)#"'sense_tune/model/checkpoints/model_bert.pt')
+                                               checkpoint='sense_tune/model/checkpoints/model_bert.pt')
 
     reduction = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
     dataloader = DataLoader(reduction,
