@@ -41,7 +41,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                     targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                    batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                    #batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                     # logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
