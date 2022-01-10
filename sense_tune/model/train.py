@@ -55,7 +55,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                 logits_list.append(logits)
 
-                correct += ((predictions == labels).sum().item() / len(labels)) / (step+1)
+                correct += ((predictions == labels).sum().item() / len(labels)) / (global_step+1)
                 accuracy = correct
 
                 loss = batch_loss / len(batches)
