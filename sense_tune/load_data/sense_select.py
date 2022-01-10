@@ -161,12 +161,12 @@ class Sense_Selection_Data(List):
                                        segment_ids=segment_ids,
                                        label_id=label))
 
-                #if self.linear is True:
-                datapoints.append(pairs)
-                pairs = []
+                if self.linear is True:
+                    datapoints.append(pairs)
+                    pairs = []
 
-            #if self.linear is False:
-                #datapoints.append(pairs)
+        if self.linear is False:
+            datapoints.append(pairs)
 
         return datapoints
 
