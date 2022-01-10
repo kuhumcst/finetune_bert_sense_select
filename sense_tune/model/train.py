@@ -1,5 +1,6 @@
 import torch
 from torch import optim
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from time import sleep
 
@@ -13,11 +14,13 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
         max_steps
         num_epochs = max_steps // len(train_dataloader) + 1
 
+    writer = SummaryWriter(f'/content/drive/MyDrive/SPECIALE/data/')
+
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
     bin_loss_function = torch.nn.MSELoss()
     global_step = 0
-    accuracy = 0
+    #accuracy = 0
     tr_loss, tr2_loss = 0.0, 0.0
 
 
@@ -54,7 +57,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                 logits_list.append(logits)
 
                 correct = (predictions == labels).sum().item()
-                accuracy += correct / len(labels)
+                accuracy = correct / len(labels)
 
                 loss = batch_loss / len(batches)
                 # loss2 = bin_loss / len(batches)
@@ -69,12 +72,14 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                 tr_loss += loss.item()
                 # tr2_loss += loss2.item()
+                writer.add_scalar('Loss/train', tr_loss, global_step)
 
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
                 optimizer.step()
                 model.zero_grad()
                 global_step += 1
+
 
                 if 0 < max_steps < global_step:
                     epoch_iterator.close()
@@ -83,6 +88,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
             if 0 < max_steps < global_step:
                 break
 
+    writer.close()
     return global_step, tr_loss / global_step
 
 
