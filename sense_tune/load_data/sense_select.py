@@ -112,8 +112,8 @@ class Sense_Selection_Data(List):
             indexes = random.sample([i for i, sent2 in enumerate(row.examples) if i != target_index],
                                     length if length < 2 else 2)
             indexes.append(target_index)
-
-            sequences = [(sent2, 1 if i == row.target else 0) for i, sent2 in enumerate(row.examples) if i in indexes]
+            #todo flipped labels
+            sequences = [(sent2, 0 if i == row.target else 1) for i, sent2 in enumerate(row.examples) if i in indexes]
 
             # lab_1 = [str(i) for i, sent2 in enumerate(row.examples) if str(i) in row.target]
             pairs = []

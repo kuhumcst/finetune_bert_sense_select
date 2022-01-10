@@ -22,7 +22,7 @@ def k_fold_results(results: dict):
 
 
 def main(k_folds, num_epochs, training, testing=None,
-         learning_rate=0.00001, batch_size=1):
+         learning_rate=0.00002, batch_size=1):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Set fixed random number seed
