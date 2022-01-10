@@ -165,8 +165,8 @@ class Sense_Selection_Data(List):
                     datapoints.append(pairs)
                     pairs = []
 
-        if self.linear is False:
-            datapoints.append(pairs)
+            if self.linear is False:
+                datapoints.append(pairs)
 
         return datapoints
 
