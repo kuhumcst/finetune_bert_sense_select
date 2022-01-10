@@ -2,7 +2,7 @@ import torch
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from time import sleep
+
 
 from sense_tune.model.bert import BertSense, forward
 
@@ -20,16 +20,15 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
     loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
     bin_loss_function = torch.nn.MSELoss()
     global_step = 0
-    #accuracy = 0
     tr_loss, tr2_loss = 0.0, 0.0
-
+    correct = 0
 
     model.zero_grad()
     model.train()
 
     for epoch in range(num_epochs):
         # set_seed(args)  # Added here for reproducibility
-        #epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+        # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         with tqdm(train_dataloader, unit="batch", desc="Iteration") as epoch_iterator:
             # import pdb; pdb.set_trace()
             for step, batches in enumerate(epoch_iterator):
@@ -56,8 +55,8 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                 logits_list.append(logits)
 
-                correct = (predictions == labels).sum().item()
-                accuracy = correct / len(labels)
+                correct += ((predictions == labels).sum().item() / len(labels)) / (step+1)
+                accuracy = correct
 
                 loss = batch_loss / len(batches)
                 # loss2 = bin_loss / len(batches)
@@ -66,20 +65,18 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                 # loss2.backward()
 
-
-                epoch_iterator.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
-                sleep(0.1)
+                #epoch_iterator.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
 
                 tr_loss += loss.item()
                 # tr2_loss += loss2.item()
                 writer.add_scalar('Loss/train', tr_loss, global_step)
+                writer.add_scalar('Loss/train', accuracy, global_step)
 
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
                 optimizer.step()
                 model.zero_grad()
                 global_step += 1
-
 
                 if 0 < max_steps < global_step:
                     epoch_iterator.close()
@@ -97,7 +94,7 @@ def evaluate(model, eval_dataloader, device):
     nb_eval_steps = 0
     accuracy = 0
 
-    #loss_function = torch.nn.CrossEntropyLoss()
+    # loss_function = torch.nn.CrossEntropyLoss()
     bin_loss_function = torch.nn.MSELoss()
     all_labels = []
     predictions = []
@@ -114,12 +111,11 @@ def evaluate(model, eval_dataloader, device):
             batch_loss = 0
             logits_list = []
 
-
             for batch in batches:
                 logits = forward(model, batch[2:], device)
-                #targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
+                # targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                 # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                #batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                # batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                 logits = model.sigmoid(logits)
                 batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
@@ -135,20 +131,20 @@ def evaluate(model, eval_dataloader, device):
             loss = batch_loss / len(batches)
 
             eval_loss += loss
-            #prediction = logits_list[0].topk(1).indices
-            #predictions.extend(prediction)
+            # prediction = logits_list[0].topk(1).indices
+            # predictions.extend(prediction)
 
             predictions.extend(prediction)
             all_labels.extend(labels.tolist())
 
-            #if 1 in labels[prediction]:
+            # if 1 in labels[prediction]:
             # correct = 0
             # for pred, label in zip(prediction, labels):
             #     if pred == label:
             #         correct += 1
             # accuracy += correct / len(labels)
-            #else:
-                #print(batches[0][0], batches[0][1])
+            # else:
+            # print(batches[0][0], batches[0][1])
             nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
