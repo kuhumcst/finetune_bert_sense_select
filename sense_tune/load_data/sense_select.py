@@ -223,26 +223,27 @@ class Sense_Selection_Data(List):
 def collate_batch(batch):
     try:
         max_seq_length = len(batch[0][0].input_ids)
+
+        collated = []
+        for sub_batch in batch:
+            batch_size = len(sub_batch)
+
+            id_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
+            mask_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
+            segment_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
+            label_collated = torch.zeros([batch_size], dtype=torch.long)
+
+            for i, bert_input in enumerate(sub_batch):
+                id_collated[i] = torch.tensor(bert_input.input_ids, dtype=torch.long)
+                mask_collated[i] = torch.tensor(bert_input.input_mask, dtype=torch.long)
+                segment_collated[i] = torch.tensor(bert_input.segment_ids, dtype=torch.long)
+                label_collated[i] = torch.tensor(bert_input.label_id, dtype=torch.long)
+
+            collated.append([bert_input.lemma,
+                             bert_input.row,
+                             id_collated, mask_collated, segment_collated, label_collated])
     except:
         print(batch)
-    collated = []
-    for sub_batch in batch:
-        batch_size = len(sub_batch)
-
-        id_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
-        mask_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
-        segment_collated = torch.zeros([batch_size, max_seq_length], dtype=torch.long)
-        label_collated = torch.zeros([batch_size], dtype=torch.long)
-
-        for i, bert_input in enumerate(sub_batch):
-            id_collated[i] = torch.tensor(bert_input.input_ids, dtype=torch.long)
-            mask_collated[i] = torch.tensor(bert_input.input_mask, dtype=torch.long)
-            segment_collated[i] = torch.tensor(bert_input.segment_ids, dtype=torch.long)
-            label_collated[i] = torch.tensor(bert_input.label_id, dtype=torch.long)
-
-        collated.append([bert_input.lemma,
-                         bert_input.row,
-                         id_collated, mask_collated, segment_collated, label_collated])
 
     return collated
 
