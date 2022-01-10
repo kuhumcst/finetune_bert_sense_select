@@ -70,7 +70,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                 tr_loss += loss.item()
                 # tr2_loss += loss2.item()
                 writer.add_scalar('Loss/train', tr_loss, global_step)
-                writer.add_scalar('Loss/train', accuracy, global_step)
+                writer.add_scalar('Accuracy/train', accuracy, global_step)
 
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
