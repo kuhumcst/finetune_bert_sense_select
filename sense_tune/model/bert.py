@@ -11,6 +11,7 @@ class BertSense(BertPreTrainedModel):
 
         self.bert = BertModel(config)
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
+        self.sigmoid = torch.nn.Sigmoid()
         self.relu = torch.nn.ReLU()
         self.out = torch.nn.Linear(config.hidden_size, 1)
         self.init_weights()

@@ -88,7 +88,7 @@ def evaluate(model, eval_dataloader, device):
     accuracy = 0
 
     loss_function = torch.nn.CrossEntropyLoss()
-
+    all_labels = []
     predictions = []
     iterator = tqdm(eval_dataloader, desc="Iteration")
     for batches in iterator:
@@ -118,16 +118,22 @@ def evaluate(model, eval_dataloader, device):
 
                 batch_loss += loss_function(logits, targets)
 
-            logits_list.append(logits)
+            logits_list.append(model.sigmoid(logits))
 
             loss = batch_loss / len(batches)
 
         eval_loss += loss
-        prediction = logits_list[0].topk(1).indices
-        predictions.extend(prediction)
+        #prediction = logits_list[0].topk(1).indices
+        #predictions.extend(prediction)
 
-        if 1 in labels[prediction]:
-            accuracy += 1
+        prediction = [1 if pred>=0.5 else 0 for pred in logits_list[0]]
+        predictions.extend(prediction)
+        all_labels.extend(labels.tolist())
+
+        #if 1 in labels[prediction]:
+        for pred, label in zip(prediction, labels):
+            if pred == label:
+                accuracy += 1
         #else:
             #print(batches[0][0], batches[0][1])
         nb_eval_steps += 1
