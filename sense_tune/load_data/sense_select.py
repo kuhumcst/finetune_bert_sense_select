@@ -221,8 +221,10 @@ class Sense_Selection_Data(List):
 
 
 def collate_batch(batch):
-    max_seq_length = len(batch[0][0].input_ids)
-
+    try:
+        max_seq_length = len(batch[0][0].input_ids)
+    except:
+        print(batch)
     collated = []
     for sub_batch in batch:
         batch_size = len(sub_batch)
