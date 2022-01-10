@@ -1,6 +1,7 @@
 import torch
 from torch import optim
 from tqdm import tqdm
+from time import sleep
 
 from sense_tune.model.bert import BertSense, forward
 
@@ -16,68 +17,71 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
     loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
     bin_loss_function = torch.nn.MSELoss()
     global_step = 0
+    accuracy = 0
     tr_loss, tr2_loss = 0.0, 0.0
 
+
     model.zero_grad()
+    model.train()
 
     for epoch in range(num_epochs):
-
         # set_seed(args)  # Added here for reproducibility
-        epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-        # import pdb; pdb.set_trace()
-        for step, batches in enumerate(epoch_iterator):
-            model.train()
+        #epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+        with tqdm(train_dataloader, unit="batch", desc="Iteration") as epoch_iterator:
+            # import pdb; pdb.set_trace()
+            for step, batches in enumerate(epoch_iterator):
+                epoch_iterator.set_description(f"Epoch {epoch}")
 
-            # run model
-            batch_loss = 0
-            logits_list = []
+                # run model
+                batch_loss = 0
+                logits_list = []
+                labels = batches[0][5]
 
-            if len(batches) < 1:
-                continue
+                if len(batches) < 1:
+                    continue
 
-            if isinstance(model, BertSense):
                 for batch in batches:
                     logits = forward(model, batch[2:], device)
 
-                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
+                    # targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                     # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                    #batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                    # batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
-                    # logits = model.sigmoid(logits)
+                    logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
-            else:
-                batch = torch.stack([b[0] for b in batches])
-                labels = torch.stack([l[1] for l in batches])
+                    predictions = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
 
-                logits = model(batch.to(device))
-                targets = torch.max(labels.view(1, -1), -1).indices.to(device).detach()
+                logits_list.append(logits)
 
-                batch_loss += loss_function(logits.view(1, -1), targets)
-                # batch_loss += bin_loss_function(logits.view(1, -1), labels.to(torch.float).to(device))
+                correct = (predictions == labels).sum().item()
+                accuracy += correct / len(labels)
 
-            logits_list.append(logits)
+                loss = batch_loss / len(batches)
+                # loss2 = bin_loss / len(batches)
 
-            loss = batch_loss / len(batches)
-            # loss2 = bin_loss / len(batches)
+                loss.backward()
 
-            loss.backward()
-            # loss2.backward()
+                # loss2.backward()
 
-            tr_loss += loss.item()
-            # tr2_loss += loss2.item()
 
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+                epoch_iterator.set_postfix(loss=loss.item(), accuracy=100. * accuracy)
+                sleep(0.1)
 
-            optimizer.step()
-            model.zero_grad()
-            global_step += 1
+                tr_loss += loss.item()
+                # tr2_loss += loss2.item()
+
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+
+                optimizer.step()
+                model.zero_grad()
+                global_step += 1
+
+                if 0 < max_steps < global_step:
+                    epoch_iterator.close()
+                    break
 
             if 0 < max_steps < global_step:
-                epoch_iterator.close()
                 break
-
-        if 0 < max_steps < global_step:
-            break
 
     return global_step, tr_loss / global_step
 
@@ -90,6 +94,7 @@ def evaluate(model, eval_dataloader, device):
     loss_function = torch.nn.CrossEntropyLoss()
     all_labels = []
     predictions = []
+
     iterator = tqdm(eval_dataloader, desc="Iteration")
     for batches in iterator:
         if len(batches) < 1:
@@ -98,45 +103,46 @@ def evaluate(model, eval_dataloader, device):
         model.eval()
         with torch.no_grad():
 
-            labels = batches[0][5] if isinstance(model, BertSense) else [b[1] for b in batches]
-
             # run model
             batch_loss = 0
             logits_list = []
 
-            if isinstance(model, BertSense):
-                for batch in batches:
-                    logits = forward(model, batch[2:], device)
-                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                    # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                    batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
-            else:
-                batch = torch.stack([b[0] for b in batches])
-                lab = torch.stack([l[1] for l in batches])
-                logits = model(batch.to(device)).view(1, -1)
-                targets = torch.max(lab.view(1, -1), -1).indices.to(device).detach()
 
+            for batch in batches:
+                logits = forward(model, batch[2:], device)
+                targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
+                # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
+                batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+
+                logits = model.sigmoid(logits)
                 batch_loss += loss_function(logits, targets)
 
-            logits_list.append(model.sigmoid(logits))
+            logits_list.append(logits)
+
+            prediction = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
+            labels = batches[0][5] if isinstance(model, BertSense) else [b[1] for b in batches]
+
+            correct = (prediction == labels).sum().item()
+            accuracy += correct / len(labels)
 
             loss = batch_loss / len(batches)
 
-        eval_loss += loss
-        #prediction = logits_list[0].topk(1).indices
-        #predictions.extend(prediction)
+            eval_loss += loss
+            #prediction = logits_list[0].topk(1).indices
+            #predictions.extend(prediction)
 
-        prediction = [1 if pred>=0.5 else 0 for pred in logits_list[0]]
-        predictions.extend(prediction)
-        all_labels.extend(labels.tolist())
+            predictions.extend(prediction)
+            all_labels.extend(labels.tolist())
 
-        #if 1 in labels[prediction]:
-        for pred, label in zip(prediction, labels):
-            if pred == label:
-                accuracy += 1
-        #else:
-            #print(batches[0][0], batches[0][1])
-        nb_eval_steps += 1
+            #if 1 in labels[prediction]:
+            # correct = 0
+            # for pred, label in zip(prediction, labels):
+            #     if pred == label:
+            #         correct += 1
+            # accuracy += correct / len(labels)
+            #else:
+                #print(batches[0][0], batches[0][1])
+            nb_eval_steps += 1
 
     eval_loss = eval_loss / nb_eval_steps
 
