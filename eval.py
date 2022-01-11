@@ -40,7 +40,7 @@ def main(testing):
     model_name = 'Maltehb/danish-bert-botxo'
     model, tokenizer = get_model_and_tokenizer(model_name,
                                                device,
-                                               checkpoint='sense_tune/model/checkpoints/model_bert.pt'
+                                               #checkpoint='sense_tune/model/checkpoints/model_bert.pt'
                                                )
 
     # Just test evaluation

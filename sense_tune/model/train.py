@@ -93,11 +93,13 @@ def evaluate(model, eval_dataloader, device):
     eval_loss = 0.0
     nb_eval_steps = 0
     accuracy = 0
+    accuracy2 = 0
 
     loss_function = torch.nn.CrossEntropyLoss()
     bin_loss_function = torch.nn.MSELoss()
     all_labels = []
     predictions = []
+    predictions2 = []
 
     iterator = tqdm(eval_dataloader, desc="Iteration")
     for batches in iterator:
@@ -108,10 +110,8 @@ def evaluate(model, eval_dataloader, device):
         with torch.no_grad():
 
             # run model
-            accuracy2 = 0
             batch_loss = 0
             logits_list = []
-            predictions2 = []
 
             for batch in batches:
                 logits = forward(model, batch[2:], device)
