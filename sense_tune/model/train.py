@@ -45,9 +45,9 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                 for batch in batches:
                     logits = forward(model, batch[2:], device)
 
-                    # targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                    # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                    # batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
+                    batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
+                    #batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                     logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
@@ -94,7 +94,7 @@ def evaluate(model, eval_dataloader, device):
     nb_eval_steps = 0
     accuracy = 0
 
-    # loss_function = torch.nn.CrossEntropyLoss()
+    loss_function = torch.nn.CrossEntropyLoss()
     bin_loss_function = torch.nn.MSELoss()
     all_labels = []
     predictions = []
@@ -113,8 +113,8 @@ def evaluate(model, eval_dataloader, device):
 
             for batch in batches:
                 logits = forward(model, batch[2:], device)
-                # targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                # batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
+                targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
+                batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                 # batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                 logits = model.sigmoid(logits)

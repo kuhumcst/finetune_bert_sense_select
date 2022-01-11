@@ -17,7 +17,7 @@ class Sense_Selection_Data(List):
         if data_type == 'reduce':
             super().__init__(self.load_reduction_data(data, tokenizer))
         else:
-            super().__init__(self.load_data2(data, tokenizer))
+            super().__init__(self.load_data(data, tokenizer))
 
     @staticmethod
     def truncate_pair_to_max_length(tokens_a, tokens_b, max_length):
