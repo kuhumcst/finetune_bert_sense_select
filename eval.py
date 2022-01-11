@@ -54,11 +54,11 @@ def main(testing):
                              collate_fn=collate_batch)
 
     print('\nEvaluating model on test data...')
-    test_loss, test_accuracy = evaluate(model, data_loader, device)
+    test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device)
 
     # Print accuracy
     print(f'Test loss: {test_loss}')
-    print(f'Test accuracy: {100 * test_accuracy}')
+    print(f'Test accuracy: {100 * test_accuracy, 100 * test_accuracy2}')
     print('--------------------------------')
 
 
