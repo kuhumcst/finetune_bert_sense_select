@@ -52,10 +52,10 @@ def main(k_folds, num_epochs, training, testing=None,
         print(f'Training loss: {loss}')
 
         print('\nEvaluating model on training...')
-        train_loss, train_accuracy = evaluate(model, data_loader, device)
+        train_loss, train_accuracy, train_accuracy2 = evaluate(model, data_loader, device)
         # Print accuracy
         print(f'Train-evaluation loss: {train_loss}')
-        print(f'Train accuracy: {100 * train_accuracy}')
+        print(f'Train accuracy: {100 * train_accuracy, 100 * train_accuracy2}')
 
         save_checkpoint('sense_tune/model/checkpoints/model_bert.pt', model, train_loss)
         save_metrics('sense_tune/model/checkpoints/metrics_bert.pt',
@@ -69,11 +69,11 @@ def main(k_folds, num_epochs, training, testing=None,
                                  collate_fn=collate_batch)
 
         print('\nEvaluating model on test data...')
-        test_loss, test_accuracy = evaluate(model, data_loader, device)
+        test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device)
 
         # Print accuracy
         print(f'Test loss: {test_loss}')
-        print(f'Test accuracy: {100 * test_accuracy}')
+        print(f'Test accuracy: {100 * test_accuracy, 100 * test_accuracy2}')
         print('--------------------------------')
 
     # k-fold cross validation
@@ -129,7 +129,7 @@ def main(k_folds, num_epochs, training, testing=None,
             print(f'Train accuracy for fold {fold}: {100 * train_accuracy}')
 
             print('\nEvaluating model on test data...')
-            test_loss, test_accuracy = evaluate(model, test_loader, device)
+            test_loss, test_accuracy, test_accuracy2 = evaluate(model, test_loader, device)
 
             # Print accuracy
             print(f'Test loss for fold {fold}: {test_loss}')

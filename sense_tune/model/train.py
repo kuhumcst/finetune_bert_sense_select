@@ -46,8 +46,8 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                     logits = forward(model, batch[2:], device)
 
                     targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                    batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                    #batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                    #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
+                    batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                     logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
@@ -108,14 +108,16 @@ def evaluate(model, eval_dataloader, device):
         with torch.no_grad():
 
             # run model
+            accuracy2 = 0
             batch_loss = 0
             logits_list = []
+            predictions2 = []
 
             for batch in batches:
                 logits = forward(model, batch[2:], device)
                 targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
-                # batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
+                batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                 logits = model.sigmoid(logits)
                 batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
@@ -131,13 +133,14 @@ def evaluate(model, eval_dataloader, device):
             loss = batch_loss / len(batches)
 
             eval_loss += loss
-            # prediction = logits_list[0].topk(1).indices
-            # predictions.extend(prediction)
+            prediction2 = logits_list[0].topk(1).indices
+            predictions2.extend(prediction)
 
             predictions.extend(prediction)
             all_labels.extend(labels.tolist())
 
-            # if 1 in labels[prediction]:
+            if 1 in labels[prediction2]:
+                accuracy2 += 1
             # correct = 0
             # for pred, label in zip(prediction, labels):
             #     if pred == label:
@@ -149,4 +152,4 @@ def evaluate(model, eval_dataloader, device):
 
     eval_loss = eval_loss / nb_eval_steps
 
-    return eval_loss.item(), accuracy / len(eval_dataloader)
+    return eval_loss.item(), accuracy / len(eval_dataloader), accuracy2 / len(eval_dataloader)
