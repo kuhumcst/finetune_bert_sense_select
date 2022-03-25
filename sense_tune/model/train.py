@@ -2,7 +2,7 @@ import torch
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
+from torchmetrics import AUROC
 
 from sense_tune.model.bert import BertSense, forward
 
@@ -18,7 +18,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
-    bin_loss_function = torch.nn.MSELoss()
+    bin_loss_function = AUROC(pos_label=1)
     global_step = 0
     tr_loss, tr2_loss = 0.0, 0.0
     correct = 0
@@ -45,11 +45,15 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                 for batch in batches:
                     logits = forward(model, batch[2:], device)
 
-                    targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
-                    batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
+                    labs = batch[5].to(device)
+                    k, targets = labs.count_nonzero(), labs.nonzero()
+
+                    # targets = labs.topk(k=labs.count_nonzero()).indicies.detach()
+                    #targets = torch.max(labs, -1).indices.to(device).detach()
+                    batch_loss += loss_function(logits.repeat(k, 1), targets.squeeze(dim=1))
 
                     logits = model.sigmoid(logits)
-                    batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
+                    batch_loss += bin_loss_function(logits, labs)
                     predictions = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
 
                 logits_list.append(logits)
