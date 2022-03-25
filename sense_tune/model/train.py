@@ -54,7 +54,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
                     logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, labs)
-                    predictions = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
+                    predictions = torch.tensor([1 if pred >= 0 else 0 for pred in logits])
 
                 logits_list.append(logits)
 
@@ -127,7 +127,7 @@ def evaluate(model, eval_dataloader, device):
 
             logits_list.append(logits)
 
-            prediction = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
+            prediction = torch.tensor([1 if pred >= 0 else 0 for pred in logits])
             labels = batches[0][5] if isinstance(model, BertSense) else [b[1] for b in batches]
 
             correct = (prediction == labels).sum().item()
