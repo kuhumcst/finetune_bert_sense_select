@@ -16,9 +16,6 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
 
     writer = SummaryWriter(f'/content/drive/MyDrive/SPECIALE/data/')
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
-    bin_loss_function = AUROC(pos_label=1)
     global_step = 0
     tr_loss, tr2_loss = 0.0, 0.0
     correct = 0
@@ -27,6 +24,9 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
     model.train()
 
     for epoch in range(num_epochs):
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        loss_function = torch.nn.CrossEntropyLoss()  # torch.nn.BCEWithLogitsLoss()
+        bin_loss_function = AUROC(pos_label=1)
         # set_seed(args)  # Added here for reproducibility
         # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
         with tqdm(train_dataloader, unit="batch", desc="Iteration") as epoch_iterator:
@@ -45,8 +45,8 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                 for batch in batches:
                     logits = forward(model, batch[2:], device)
 
-                    labs = batch[5].to(device)
-                    k, targets = labs.count_nonzero(), labs.nonzero()
+                    labs = batch[5].to(device).detach()
+                    k, targets = labs.count_nonzero(), labs.nonzero().detach()
 
                     # targets = labs.topk(k=labs.count_nonzero()).indicies.detach()
                     #targets = torch.max(labs, -1).indices.to(device).detach()
