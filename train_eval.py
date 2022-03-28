@@ -29,7 +29,8 @@ def main(k_folds, num_epochs, training, testing=None,
     # torch.manual_seed(42)
 
     model_name = 'Maltehb/danish-bert-botxo'
-    model, tokenizer = get_model_and_tokenizer(model_name, device)
+    model_type = 'bert_token'
+    model, tokenizer, forward = get_model_and_tokenizer(model_name, model_type, device)
 
     # Normal train + test evaluation
     if k_folds < 1:
@@ -45,6 +46,7 @@ def main(k_folds, num_epochs, training, testing=None,
         n_steps, loss = train(model,
                               data_loader,
                               device,
+                              forward,
                               learning_rate=learning_rate,
                               num_epochs=num_epochs)
 
@@ -105,12 +107,13 @@ def main(k_folds, num_epochs, training, testing=None,
                                      sampler=test_subsampler,
                                      collate_fn=collate_batch)
             if fold > 0:
-                model, tokenizer1 = get_model_and_tokenizer(model_name, device)
+                model, tokenizer1, forward = get_model_and_tokenizer(model_name, model_type, device)
 
             print('Training model...\n')
             n_steps, loss = train(model,
                                   train_loader,
                                   device,
+                                  forward,
                                   learning_rate=learning_rate,
                                   num_epochs=num_epochs)
 

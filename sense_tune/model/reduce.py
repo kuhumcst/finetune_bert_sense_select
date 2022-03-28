@@ -3,15 +3,16 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from sense_tune.load_data.sense_select import Sense_Selection_Data, SentDataset, collate_batch
-from sense_tune.model.bert import forward, get_model_and_tokenizer
+from sense_tune.model.bert import get_model_and_tokenizer
 
 
 def get_BERT_score(data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model, tokenizer = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                               device,
-                                               checkpoint='sense_tune/model/checkpoints/model_bert.pt')
+    model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
+                                                        'bert_token',  # 'bertbase' 'bert_token_cos'
+                                                        device,
+                                                        checkpoint='sense_tune/model/checkpoints/model_bert.pt')
 
     reduction = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
     dataloader = DataLoader(reduction,
@@ -30,9 +31,9 @@ def get_BERT_score(data):
 
         model.eval()
         with torch.no_grad():
-            #print(batches)
+            # print(batches)
 
-            labels = batches[0][5] #if isinstance(model, BertSense) else [b[1] for b in batches]
+            labels = batches[0][5]  # if isinstance(model, BertSense) else [b[1] for b in batches]
 
             # run model
             for batch in batches:
@@ -45,4 +46,3 @@ def get_BERT_score(data):
     data['score'] = torch.tensor(score)
 
     return data
-
