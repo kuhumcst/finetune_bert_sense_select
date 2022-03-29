@@ -55,8 +55,8 @@ def forward_token(model, batch, device):
         token_idxs = placement.nonzero().transpose(1, 0)
         return [token_idxs[1][token_idxs[0] == b] for b in range(batch_size)]
 
-    def get_repr_avg(output_hidden_states, token_idx, layers):
-        layers_hidden = output_hidden_states[layers]
+    def get_repr_avg(output_hidden_states, token_idx):
+        layers_hidden = output_hidden_states[-4:]
 
         if isinstance(layers_hidden, tuple):
             layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)
@@ -88,7 +88,7 @@ def forward_token(model, batch, device):
 
     hidden_states = bert_out.hidden_states
     token_ids = get_token_repr_idx(batch[0])
-    new_output = get_repr_avg(hidden_states, token_ids, layers=-1)
+    new_output = get_repr_avg(hidden_states, token_ids)
 
     # returns the last hidden layer of the classification token further processed by a Linear layer
     # and a Tanh activation function
