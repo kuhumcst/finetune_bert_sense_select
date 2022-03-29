@@ -38,10 +38,11 @@ def main(testing):
     # torch.manual_seed(42)
 
     model_name = 'Maltehb/danish-bert-botxo'
-    model, tokenizer = get_model_and_tokenizer(model_name,
-                                               device,
-                                               checkpoint='sense_tune/model/checkpoints/model_bert.pt'
-                                               )
+    model, tokenizer, forward = get_model_and_tokenizer(model_name,
+                                                        'bert_token',
+                                                        device,
+                                                        checkpoint=False#'sense_tune/model/checkpoints/model_bert.pt'
+                                                        )
 
     # Just test evaluation
 
@@ -54,7 +55,7 @@ def main(testing):
                              collate_fn=collate_batch)
 
     print('\nEvaluating model on test data...')
-    test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device)
+    test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device, forward)
 
     # Print accuracy
     print(f'Test loss: {test_loss}')

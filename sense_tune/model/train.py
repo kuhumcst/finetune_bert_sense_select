@@ -122,13 +122,13 @@ def evaluate(model, eval_dataloader, device, forward):
                 #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                 batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
-                logits = model.sigmoid(logits)
+                #logits = model.sigmoid(logits)
                 batch_loss += bin_loss_function(logits, batch[5].to(torch.float).to(device))
 
             logits_list.append(logits)
 
             prediction = torch.tensor([1 if pred >= 0 else 0 for pred in logits])
-            labels = batches[0][5] if isinstance(model, BertSense) else [b[1] for b in batches]
+            labels = batches[0][5] #if isinstance(model, BertSense) else [b[1] for b in batches]
 
             correct = (prediction == labels).sum().item()
             accuracy += correct / len(labels)
