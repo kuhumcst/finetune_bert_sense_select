@@ -54,7 +54,7 @@ def main(k_folds, num_epochs, training, testing=None,
         print(f'Training loss: {loss}')
 
         print('\nEvaluating model on training...')
-        train_loss, train_accuracy, train_accuracy2 = evaluate(model, data_loader, device)
+        train_loss, train_accuracy, train_accuracy2 = evaluate(model, data_loader, device, forward)
         # Print accuracy
         print(f'Train-evaluation loss: {train_loss}')
         print(f'Train accuracy: {100 * train_accuracy, 100 * train_accuracy2}')
@@ -71,7 +71,7 @@ def main(k_folds, num_epochs, training, testing=None,
                                  collate_fn=collate_batch)
 
         print('\nEvaluating model on test data...')
-        test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device)
+        test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device, forward)
 
         # Print accuracy
         print(f'Test loss: {test_loss}')
@@ -132,7 +132,7 @@ def main(k_folds, num_epochs, training, testing=None,
             print(f'Train accuracy for fold {fold}: {100 * train_accuracy}')
 
             print('\nEvaluating model on test data...')
-            test_loss, test_accuracy, test_accuracy2 = evaluate(model, test_loader, device)
+            test_loss, test_accuracy, test_accuracy2 = evaluate(model, test_loader, device, forward)
 
             # Print accuracy
             print(f'Test loss for fold {fold}: {test_loss}')

@@ -52,7 +52,7 @@ def train(model, train_dataloader, device, forward, learning_rate=1e-4,
                     #targets = torch.max(labs, -1).indices.to(device).detach()
                     batch_loss += loss_function(logits.repeat(k, 1), targets.squeeze(dim=1))
 
-                    logits = model.sigmoid(logits)
+                    #logits = model.sigmoid(logits)
                     batch_loss += bin_loss_function(logits, labs)
                     predictions = torch.tensor([1 if pred >= 0 else 0 for pred in logits])
 
@@ -92,7 +92,7 @@ def train(model, train_dataloader, device, forward, learning_rate=1e-4,
     return global_step, tr_loss / global_step
 
 
-def evaluate(model, eval_dataloader, device):
+def evaluate(model, eval_dataloader, device, forward):
     eval_loss = 0.0
     nb_eval_steps = 0
     accuracy = 0

@@ -42,7 +42,7 @@ class BertSenseToken(BertPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.sigmoid = torch.nn.Sigmoid()
         self.cos = torch.nn.CosineSimilarity(dim=1)
-        self.relu = torch.nn.ReLU()
+        self.relu = torch.nn.Tanh()
         self.linear = torch.nn.Linear(config.hidden_size * 2, 192)
         self.out = torch.nn.Linear(192, 1)
         self.init_weights()
