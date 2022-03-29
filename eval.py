@@ -41,7 +41,7 @@ def main(testing):
     model, tokenizer, forward = get_model_and_tokenizer(model_name,
                                                         'bert_token',
                                                         device,
-                                                        checkpoint=False#'sense_tune/model/checkpoints/model_bert.pt'
+                                                        checkpoint='sense_tune/model/checkpoints/model_bert.pt'
                                                         )
 
     # Just test evaluation
