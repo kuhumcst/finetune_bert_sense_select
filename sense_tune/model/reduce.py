@@ -38,7 +38,8 @@ def get_BERT_score(data):
             # run model
             for batch in batches:
                 logits = forward(model, batch[2:], device)
-                logits = model.sigmoid(logits)
+
+                #logits = model.sigmoid(logits)
                 score.append(logits)
 
         nb_eval_steps += 1
