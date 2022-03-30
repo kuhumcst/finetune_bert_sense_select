@@ -42,7 +42,7 @@ class BertSenseToken(BertPreTrainedModel):
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.sigmoid = torch.nn.Sigmoid()
         self.cos = torch.nn.CosineSimilarity(dim=1)
-        self.relu = torch.nn.Tanh()
+        self.activation = torch.nn.Tanh()
         self.linear = torch.nn.Linear(config.hidden_size * 2, 192)
         self.out = torch.nn.Linear(192, 1)
         self.init_weights()
@@ -94,7 +94,7 @@ def forward_token(model, batch, device):
     # and a Tanh activation function
     # bert_out = model.dropout(bert_out[1])
     bert_out = model.dropout(new_output)
-    linear = model.relu(model.linear(bert_out))
+    linear = model.linear(model.activation(model.lbert_out))
     # class_out = model.out(linear)
     class_out = model.out(linear)
 
