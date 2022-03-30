@@ -94,7 +94,7 @@ def forward_token(model, batch, device):
     # and a Tanh activation function
     # bert_out = model.dropout(bert_out[1])
     bert_out = model.dropout(new_output)
-    linear = model.linear(model.activation(model.lbert_out))
+    linear = model.linear(model.activation(model.bert_out))
     # class_out = model.out(linear)
     class_out = model.out(linear)
 
