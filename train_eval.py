@@ -29,7 +29,7 @@ def main(k_folds, num_epochs, training, testing=None,
     # torch.manual_seed(42)
 
     model_name = 'Maltehb/danish-bert-botxo'
-    model_type = 'bert_token'
+    model_type = 'bertbase'
     model, tokenizer, forward = get_model_and_tokenizer(model_name, model_type, device)
 
     # Normal train + test evaluation
