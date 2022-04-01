@@ -10,7 +10,7 @@ def get_BERT_score(data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                                        'bertbase',# 'bert_token_cos'
+                                                        'bert_token', #'bertbase',# 'bert_token_cos'
                                                         device,
                                                         checkpoint='sense_tune/model/checkpoints/model_bert.pt')
 
