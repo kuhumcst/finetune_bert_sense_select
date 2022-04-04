@@ -56,7 +56,7 @@ def forward_token(model, batch, device):
         return [token_idxs[1][token_idxs[0] == b] for b in range(batch_size)]
 
     def get_repr_avg(output_hidden_states, token_idx):
-        layers_hidden = output_hidden_states[:5]
+        layers_hidden = output_hidden_states[-4:]
 
         if isinstance(layers_hidden, tuple):
             layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)
