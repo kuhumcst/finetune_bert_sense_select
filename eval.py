@@ -39,7 +39,7 @@ def main(testing):
 
     model_name = 'Maltehb/danish-bert-botxo'
     model, tokenizer, forward = get_model_and_tokenizer(model_name,
-                                                        'bert_token',
+                                                        'bert_base',
                                                         device,
                                                         checkpoint='sense_tune/model/checkpoints/model_bert.pt'
                                                         )
