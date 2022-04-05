@@ -123,7 +123,7 @@ def evaluate(model, eval_dataloader, device, forward):
                 batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
                 logits = torch.arctan(logits)
-                batch_loss += bin_loss_function(logits, batch[5].to(device))
+                batch_loss += bin_loss_function(logits, batch[5].to(device).to(torch.float))
 
             logits_list.append(logits)
 
