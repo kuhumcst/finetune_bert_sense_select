@@ -13,7 +13,7 @@ def get_BERT_score(data):
     model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
                                                         'bertbase',# 'bert_token_cos'
                                                         device,
-                                                        checkpoint='sense_tune/model/checkpoints/model_bert.pt')
+                                                        checkpoint='/content/drive/MyDrive/SPECIALE/data/model_0.pt')
 
     reduction = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
     dataloader = DataLoader(reduction,
