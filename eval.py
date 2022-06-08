@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import sense_tune.utils as utils
 from sense_tune.load_data.sense_select import Sense_Selection_Data, SentDataset, collate_batch
 from sense_tune.model.bert import get_model_and_tokenizer
-from sense_tune.model.reduce import get_BERT_score
+from sense_tune.model.reduce import get_BERT_score, get_BERT_embeddings
 from sense_tune.model.train import evaluate
 
 def load_datapoints_from_path(path, dataset):
@@ -41,7 +41,7 @@ def main(testing):
     model, tokenizer, forward = get_model_and_tokenizer(model_name,
                                                         'bert_base',
                                                         device,
-                                                        checkpoint='sense_tune/model/checkpoints/model_bert.pt'
+                                                        checkpoint='/content/drive/MyDrive/SPECIALE/data/model_0.pt'
                                                         )
 
     # Just test evaluation
@@ -70,3 +70,6 @@ if __name__ == "__main__":
     reduction_data = pd.read_csv(reduction, sep='\t', index_col=0)
     reduction_data_score = get_BERT_score(reduction_data)
     reduction_data_score.to_csv(f'/content/drive/MyDrive/SPECIALE/data/reduction_score_{run_id}.tsv', sep='\t')
+
+    reduction_data_embeddings = get_BERT_embeddings(reduction_data)
+    reduction_data_embeddings.to_csv(f'/content/drive/MyDrive/SPECIALE/data/reduction_emb_{run_id}.tsv', sep='\t')
