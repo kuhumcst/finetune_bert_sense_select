@@ -146,10 +146,10 @@ class BertSenseToken(BertPreTrainedModel):
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         token_ids = get_token_repr_idx(input_ids)  # get target token placement
-
-        bert_out = self.bert(input_ids[input_ids != 31748],  # remove [TGT] token
-                             attention_mask=attention_mask[input_ids != 31748],  # remove [TGT] token
-                             token_type_ids=token_type_ids[input_ids != 31748],  # remove [TGT] token
+        batch_size = input_ids.shape[0]
+        bert_out = self.bert(input_ids[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
+                             attention_mask=attention_mask[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
+                             token_type_ids=token_type_ids[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
                              position_ids=position_ids,
                              head_mask=head_mask,
                              inputs_embeds=inputs_embeds,
@@ -184,10 +184,10 @@ class BertSenseToken(BertPreTrainedModel):
 
         # import pdb; pdb.set_trace()
         token_ids = get_token_repr_idx(input_ids)  # get target token placement
-
-        bert_out = self.bert(input_ids[input_ids != 31748],  # remove [TGT] token
-                             attention_mask=attention_mask[input_ids != 31748],  # remove [TGT] token
-                             token_type_ids=token_type_ids[input_ids != 31748],  # remove [TGT] token
+        batch_size = input_ids.shape[0]
+        bert_out = self.bert(input_ids[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
+                             attention_mask=attention_mask[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
+                             token_type_ids=token_type_ids[input_ids != 31748].view(batch_size, -1),  # remove [TGT] token
                              position_ids=position_ids,
                              head_mask=head_mask,
                              inputs_embeds=inputs_embeds,
