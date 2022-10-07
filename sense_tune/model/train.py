@@ -40,6 +40,7 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                     continue
 
                 for batch in batches:
+                    import pdb; pdb.set_trace()
                     logits = model(input_ids=batch[2],
                                    attention_mask=batch[3],
                                    token_type_ids=batch[4]
