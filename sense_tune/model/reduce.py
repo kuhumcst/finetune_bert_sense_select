@@ -10,10 +10,10 @@ from sense_tune.model.bert import get_model_and_tokenizer
 def get_BERT_score(data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                                        'bertbase',# 'bert_token_cos'
-                                                        device,
-                                                        checkpoint='/content/drive/MyDrive/SPECIALE/data/model_0.pt')
+    model, tokenizer = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
+                                                'bert_token',# 'bert_token_cos'
+                                                device,
+                                                checkpoint='/content/drive/MyDrive/SPECIALE/data/model_0.pt')
 
     reduction = SentDataset(Sense_Selection_Data(data, tokenizer, data_type='reduce'))
     dataloader = DataLoader(reduction,
@@ -38,11 +38,12 @@ def get_BERT_score(data):
 
             # run model
             for batch in batches:
-                logits = forward(model, batch[2:], device)
+                logits = model(input_ids=batch[2],
+                               attention_mask=batch[3],
+                               token_type_ids=batch[4]
+                               )
 
-                logits = model.sigmoid(torch.arctan(logits))
                 score.append(logits)
-
 
         nb_eval_steps += 1
 
@@ -54,7 +55,7 @@ def get_BERT_embeddings(data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model, tokenizer, forward = get_model_and_tokenizer('Maltehb/danish-bert-botxo',
-                                                        'bertbase',# 'bert_token_cos'
+                                                        'bert_token',# 'bert_token_cos'
                                                         device,
                                                         checkpoint='/content/drive/MyDrive/SPECIALE/data/model_0.pt')
 
@@ -82,9 +83,9 @@ def get_BERT_embeddings(data):
             # run model
             for batch in batches:
                 input_batch = tuple(tensor.to(device) for tensor in batch[2:])
-                bert_out = model.bert(input_ids=input_batch[0],
-                                      attention_mask=input_batch[1],
-                                      token_type_ids=input_batch[2])
+                bert_out = model(input_ids=input_batch[0],
+                                 attention_mask=input_batch[1],
+                                 token_type_ids=input_batch[2])
 
                 embeddings[batch[1]] = bert_out[1].squeeze().detach().cpu()
 
