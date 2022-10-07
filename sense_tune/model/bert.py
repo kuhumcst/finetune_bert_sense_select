@@ -24,8 +24,8 @@ def get_repr_avg(output_hidden_states, token_idx, n_sent=1):
     layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)  # first average (hidden layers)
 
     batch_size = layers_hidden.shape[0]
-    hidden_token = [layers_hidden[b, token_idx[b][0]:token_idx[b][1] - 1, :]
-                    for b in range(batch_size)]  # get target tokens for each instance in batch
+    hidden_token = [layers_hidden[b, token_idx[b][i]:token_idx[b][j] - 1, :]
+                    for b in range(batch_size) for i, j in [(0, 1), (-2, -1)]]  # get target tokens for each instance in batch
 
     hidden_token = torch.stack([torch.mean(hidden, dim=0)
                                 if hidden.shape[0] > 1 else hidden.squeeze(0)
