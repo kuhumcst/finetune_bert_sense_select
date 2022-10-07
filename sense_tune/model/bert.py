@@ -1,151 +1,210 @@
-import torch
-import numpy as np
-from transformers import BertPreTrainedModel, BertModel, BertConfig, BertTokenizer
 from sense_tune.model.save_checkpoints import load_checkpoint
+from transformers import BertPreTrainedModel, BertTokenizer, BertConfig, BertModel
+import torch
 
-BERT_MODEL = 'Maltehb/danish-bert-botxo'
 
+def get_token_repr_idx(input_ids: torch.tensor):
+    """get the placement of [TGT] token in the bert input"""
+    batch_size = input_ids.shape[0]
+    placement = input_ids == 31748  # todo: make variable
+    token_idxs = placement.nonzero().transpose(1, 0)
+    return [token_idxs[1][token_idxs[0] == b] for b in range(batch_size)]
+
+
+def get_repr_avg(output_hidden_states, token_idx, n_sent=1):
+    """calculate the average representation for the tokens in range token_idx for the last four layers.
+    if multiple tokens are in range token_idx, then the final representation is:
+        average of the four last layers --> average of tokens --> final representation
+
+    :param output_hidden_states: Bert output
+    :param token_idx: (list) start and end index for target tokens
+    :param n_sent: (int) 1 sentence or 2 sentence input
+    """
+    layers_hidden = output_hidden_states[-4:]  # get four last hidden layers
+    layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)  # first average (hidden layers)
+
+    batch_size = layers_hidden.shape[0]
+    hidden_token = [layers_hidden[b, token_idx[b][0]:token_idx[b][1] - 1, :]
+                    for b in range(batch_size)]  # get target tokens for each instance in batch
+
+    hidden_token = torch.stack([torch.mean(hidden, dim=0)
+                                if hidden.shape[0] > 1 else hidden.squeeze(0)
+                                for hidden in hidden_token]).reshape(batch_size, -1, 768)  # second average (token)
+
+    if hidden_token.shape[0] > n_sent * 2:  # if multiple [TGT] are present, then only use the first one
+        hidden_token_1 = hidden_token[:2]
+        hidden_token_2 = hidden_token[-2:]
+        hidden_token = torch.concat((hidden_token_1, hidden_token_2), dim=1)
+
+    # return hidden_token.reshape(batch_size, 2, 768)
+    return hidden_token.reshape(batch_size, n_sent * 768)
 
 class BertSense(BertPreTrainedModel):
+    """
+    BERT model for sense similarity / proximity estimation using CLS token
+    Inherits from BERT
+
+    Attributes
+    ----------
+    :attr num_labels: number of labels for training
+    :attr config: bert config
+    :attr dropout: dropout level
+    :attr sigmoid: sigmoid activation function
+    :attr relu: Leaky ReLU activation function
+    :attr out: linear output layer
+    :attr softmax: softmax function
+
+    Methods
+    -------
+    forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                inputs_embeds=None, output_attentions=None, return_dict=None)
+        :returns: Bert sense similarity / proximity score
+    """
+
     def __init__(self, config):
         super().__init__(config)
-
+        self.num_labels = config.num_labels
+        self.config = config
         self.bert = BertModel(config)
-        self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
-        self.sigmoid = torch.nn.Sigmoid()  # torch.nn.Tanh() #
-        self.relu = torch.nn.ReLU()
-        self.out = torch.nn.Linear(config.hidden_size, 1)
-        self.init_weights()
+        self.dropout = torch.nn.Dropout(self.config.hidden_dropout_prob)
+        self.relu = torch.nn.LeakyReLU()
+        self.out = torch.nn.Linear(self.config.hidden_size, 2)
+        self.softmax = torch.nn.Softmax(dim=1)
 
+    def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                inputs_embeds=None, output_attentions=None, return_dict=None):
+        """updated forward function for sense similarity / proximity estimation"""
+        # import pdb; pdb.set_trace()
+        bert_out = self.bert(input_ids,
+                             attention_mask=attention_mask,
+                             token_type_ids=token_type_ids,
+                             position_ids=position_ids,
+                             head_mask=head_mask,
+                             inputs_embeds=inputs_embeds,
+                             output_attentions=output_attentions,
+                             output_hidden_states=True,
+                             return_dict=return_dict
+                             )
+        # returns the last hidden layer of the classification token further processed by a relu activation function
+        # and a linear layer
+        bert_out = self.dropout(bert_out[1])
+        class_out = self.out(self.relu(bert_out))
+        class_out = self.softmax(class_out)
 
-def forwardbase(model, batch, device):
-    batch = tuple(tensor.to(device) for tensor in batch)
-    # import pdb; pdb.set_trace()
-
-    bert_out = model.bert(input_ids=batch[0], attention_mask=batch[1], token_type_ids=batch[2])
-
-    # returns the last hidden layer of the classification token further processed by a Linear layer
-    # and a Tanh activation function
-    bert_out = model.dropout(bert_out[1])
-    # linear = model.relu(model.linear(bert_out))
-    # class_out = model.out(linear)
-    class_out = model.out(bert_out)
-
-    return class_out.squeeze(-1)
+        return class_out.squeeze()[0]
 
 
 class BertSenseToken(BertPreTrainedModel):
+    """
+    BERT model for sense similarity / proximity estimation using average target token embedding
+    Inherits from BERT
+
+    Attributes
+    ----------
+    :attr num_labels: number of labels for training
+    :attr config: bert config
+    :attr dropout: dropout level
+    :attr sigmoid: sigmoid activation function
+    :attr cos: cosine similarity function
+    :attr activation1: Leaky ReLU activation function for the first postprocessing layer
+    :attr activation2: TanH actionvation function for the second postprocessing layer
+    :attr reduce: first postprocessing linear layer that reduces nodes from hidden_size to 192
+    :attr combine: second postprocessing linear layer that combines the two sentence embeddings
+    :attr out: linear output layer
+
+    Methods
+    -------
+    forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                inputs_embeds=None, output_attentions=None, return_dict=None)
+        :returns: Bert sense similarity / proximity score using target token embedding
+
+    forward_cos(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                inputs_embeds=None, output_attentions=None, return_dict=None)
+        :returns: Bert sense similarity / proximity score using cosine similarity
+    """
+
     def __init__(self, config):
         super().__init__(config)
-
+        self.num_labels = config.num_labels
+        self.config = config
         self.bert = BertModel(config)
+
         self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.sigmoid = torch.nn.Sigmoid()
         self.cos = torch.nn.CosineSimilarity(dim=1)
-        self.activation = torch.nn.Tanh()
-        self.linear = torch.nn.Linear(config.hidden_size * 2, 192)
-        self.out = torch.nn.Linear(192, 1)
-        self.init_weights()
 
+        self.activation1 = torch.nn.LeakyReLU()
+        self.activation2 = torch.nn.Tanh()
+        self.reduce = torch.nn.Linear(config.hidden_size, 192)
+        self.combine = torch.nn.Linear(192 * 2, 192)
+        self.out = torch.nn.Linear(192, 2)
+        self.softmax = torch.nn.Softmax(dim=1)
 
-def forward_token(model, batch, device):
-    def get_token_repr_idx(input_ids: torch.tensor):
-        batch_size = input_ids.shape[0]
-        placement = input_ids == 31748
-        token_idxs = placement.nonzero().transpose(1, 0)
-        return [token_idxs[1][token_idxs[0] == b] for b in range(batch_size)]
+    def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                inputs_embeds=None, output_attentions=None, return_dict=None):
+        """updated forward function for sense similarity / proximity estimation"""
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-    def get_repr_avg(output_hidden_states, token_idx):
-        layers_hidden = output_hidden_states[4:-4]
+        token_ids = get_token_repr_idx(input_ids)  # get target token placement
 
-        if isinstance(layers_hidden, tuple):
-            layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)
+        bert_out = self.bert(input_ids[input_ids != 31748],  # remove [TGT] token
+                             attention_mask=attention_mask[input_ids != 31748],  # remove [TGT] token
+                             token_type_ids=token_type_ids[input_ids != 31748],  # remove [TGT] token
+                             position_ids=position_ids,
+                             head_mask=head_mask,
+                             inputs_embeds=inputs_embeds,
+                             output_attentions=output_attentions,
+                             output_hidden_states=True,
+                             return_dict=return_dict
+                             )
 
-        batch_size = layers_hidden.shape[0]
-        hidden_token = [layers_hidden[b, token_idx[b][i] + 1:token_idx[b][j], :]
-                        for b in range(batch_size) for i, j in [(0, 1), (-2, -1)]
-                        ]
+        hidden_states = bert_out.hidden_states
+        # retrieve the target token (placement known from [TGT])
+        new_output = get_repr_avg(hidden_states, token_ids, n_sent=2)
 
-        hidden_token = torch.stack([torch.mean(hidden, dim=0)
-                                    if hidden.shape[0] > 1 else hidden.squeeze(0)
-                                    for hidden in hidden_token]).reshape(batch_size, -1, 768)
+        bert_out = self.dropout(new_output)
 
-        if hidden_token.shape[1] > 2:
-            hidden_token_1 = hidden_token[:, 0]
-            hidden_token_2 = hidden_token[:, -1]
-            hidden_token = torch.concat((hidden_token_1, hidden_token_2), dim=0)
+        # returns the last hidden layer of the classification token further processed by a Linear layer
+        # and a leaky ReLU activation function
+        linear = self.reduce(self.activation1(bert_out))
 
-        return hidden_token.reshape(batch_size, 768 * 2)
+        # combines the two token representations through a linear layer + a Tanh activation function
+        linear = self.combine(self.activation2(linear))
+        # class_out = model.out(linear)
+        class_out = self.softmax(self.out(linear))
+        class_out = self.softmax(class_out)
 
-    batch = tuple(tensor.to(device) for tensor in batch)
-    # import pdb; pdb.set_trace()
+        return class_out.squeeze()[0]
 
-    bert_out = model.bert(input_ids=batch[0],
-                          attention_mask=batch[1],
-                          token_type_ids=batch[2],
-                          output_hidden_states=True
-                          )
+    def forward_cos(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
+                    inputs_embeds=None, output_attentions=None, return_dict=None):
+        """updated forward function using cosine similarity instead of trained postprocessing
+        #####THIS HAS NOT BEEN TESTED#####
+        """
 
-    hidden_states = bert_out.hidden_states
-    token_ids = get_token_repr_idx(batch[0])
-    new_output = get_repr_avg(hidden_states, token_ids)
+        # import pdb; pdb.set_trace()
+        token_ids = get_token_repr_idx(input_ids)  # get target token placement
 
-    # returns the last hidden layer of the classification token further processed by a Linear layer
-    # and a Tanh activation function
-    # bert_out = model.dropout(bert_out[1])
-    bert_out = model.dropout(new_output)
-    linear = model.linear(model.activation(bert_out))
-    # class_out = model.out(linear)
-    class_out = model.out(linear)
+        bert_out = self.bert(input_ids[input_ids != 31748],  # remove [TGT] token
+                             attention_mask=attention_mask[input_ids != 31748],  # remove [TGT] token
+                             token_type_ids=token_type_ids[input_ids != 31748],  # remove [TGT] token
+                             position_ids=position_ids,
+                             head_mask=head_mask,
+                             inputs_embeds=inputs_embeds,
+                             output_attentions=output_attentions,
+                             output_hidden_states=True,
+                             return_dict=return_dict
+                             )
 
-    return class_out.squeeze(-1)
+        bert_out = self.dropout(bert_out)
+        hidden_states = bert_out.hidden_states
+        # retrieve the target token (placement known from [TGT])
+        new_output = get_repr_avg(hidden_states, token_ids)
+        # reduce dimensionality
+        new_output = self.reduce(self.activation1(new_output))
+        class_out = self.cos(new_output[:, :192], new_output[:, 192:])
 
-
-def forward_token_cos(model, batch, device):
-    def get_token_repr_idx(input_ids: torch.tensor):
-        batch_size = input_ids.shape[0]
-        placement = input_ids == 31748
-        token_idxs = placement.nonzero().transpose(1, 0)
-        return [token_idxs[1][token_idxs[0] == b] for b in range(batch_size)]
-
-    def get_repr_avg(output_hidden_states, token_idx, layers):
-        layers_hidden = output_hidden_states[layers]
-
-        if isinstance(layers_hidden, tuple):
-            layers_hidden = torch.mean(torch.stack(layers_hidden), axis=0)
-
-        batch_size = layers_hidden.shape[0]
-        hidden_token = [layers_hidden[b, token_idx[b][i] + 1:token_idx[b][j], :]
-                        for b in range(batch_size) for i, j in [(0, 1), (-2, -1)]
-                        ]
-
-        hidden_token = torch.stack([torch.mean(hidden, dim=0)
-                                    if hidden.shape[0] > 1 else hidden.squeeze(0)
-                                    for hidden in hidden_token])
-
-        if hidden_token.shape[0] > 4:
-            hidden_token_1 = hidden_token[:2]
-            hidden_token_2 = hidden_token[-2:]
-            hidden_token = torch.concat((hidden_token_1, hidden_token_2), dim=1)
-
-        return hidden_token.reshape(batch_size, 2, 768)
-
-    batch = tuple(tensor.to(device) for tensor in batch)
-    # import pdb; pdb.set_trace()
-
-    bert_out = model.bert(input_ids=batch[0],
-                          attention_mask=batch[1],
-                          token_type_ids=batch[2],
-                          output_hidden_states=True
-                          )
-
-    bert_out = model.dropout(bert_out)
-    hidden_states = bert_out.hidden_states
-    token_ids = get_token_repr_idx(batch[0])
-    new_output = get_repr_avg(hidden_states, token_ids, layers=-1)
-    class_out = model.cos(new_output[:, 0, :], new_output[:, 1, :])
-
-    return class_out
+        return class_out
 
 
 def get_model_and_tokenizer(model_name, model_type, device, checkpoint=False):
@@ -159,13 +218,11 @@ def get_model_and_tokenizer(model_name, model_type, device, checkpoint=False):
 
     if model_type == 'bert_token':
         model = BertSenseToken.from_pretrained(model_name, config=config)
-        forward = forward_token
     elif model_type == 'bert_token_cos':
         model = BertSenseToken.from_pretrained(model_name, config=config)
-        forward = forward_token_cos
+        model.forward = model.forward_cos
     else:
         model = BertSense.from_pretrained(model_name, config=config)
-        forward = forwardbase
 
     # add new special token
     if '[TGT]' not in tokenizer.additional_special_tokens:
@@ -178,4 +235,4 @@ def get_model_and_tokenizer(model_name, model_type, device, checkpoint=False):
 
     model.to(device)
 
-    return model, tokenizer, forward
+    return model, tokenizer

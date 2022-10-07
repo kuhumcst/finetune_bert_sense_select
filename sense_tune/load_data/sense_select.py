@@ -245,6 +245,7 @@ def collate_batch(batch):
     return collated
 
 
+
 class SentDataset(torch.utils.data.Dataset):
     def __init__(self, data):
         self.data = data

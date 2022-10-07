@@ -52,7 +52,7 @@ def train(model, train_dataloader, device, forward, learning_rate=1e-4,
                     #targets = torch.max(labs, -1).indices.to(device).detach()
                     batch_loss += loss_function(logits.repeat(k, 1), targets.squeeze(dim=1))
 
-                    logits = torch.arctan(logits)
+                    logits = logits
                     batch_loss += bin_loss_function(logits, labs.to(torch.float))
                     predictions = torch.tensor([1 if pred >= 0.5 else 0 for pred in logits])
 
@@ -122,7 +122,7 @@ def evaluate(model, eval_dataloader, device, forward):
                 #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                 batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
 
-                logits = torch.arctan(logits)
+                logits = logits
                 batch_loss += bin_loss_function(logits, batch[5].to(device).to(torch.float))
 
             logits_list.append(logits)
