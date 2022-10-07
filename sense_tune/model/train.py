@@ -40,10 +40,9 @@ def train(model, train_dataloader, device, learning_rate=1e-4,
                     continue
 
                 for batch in batches:
-                    import pdb; pdb.set_trace()
-                    logits = model(input_ids=batch[2],
-                                   attention_mask=batch[3],
-                                   token_type_ids=batch[4]
+                    logits = model(input_ids=batch[2].to(device),
+                                   attention_mask=batch[3].to(device),
+                                   token_type_ids=batch[4].to(device)
                                    )
 
                     labs = batch[5].to(device).detach()
@@ -118,9 +117,9 @@ def evaluate(model, eval_dataloader, device):
             logits_list = []
 
             for batch in batches:
-                logits = model(input_ids=batch[2],
-                               attention_mask=batch[3],
-                               token_type_ids=batch[4])
+                logits = model(input_ids=batch[2].to(device),
+                               attention_mask=batch[3].to(device),
+                               token_type_ids=batch[4].to(device))
                 targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                 #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                 batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))
