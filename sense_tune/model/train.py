@@ -2,12 +2,9 @@ import torch
 from torch import optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from torchmetrics import AUROC
-
-from sense_tune.model.bert import BertSense
 
 
-def train(model, train_dataloader, device, forward, learning_rate=1e-4,
+def train(model, train_dataloader, device, learning_rate=1e-4,
           num_epochs=5, max_steps=0, max_grad_norm=1.0):
     """ Fine-tune the model """
     if max_steps > 0:
@@ -43,7 +40,7 @@ def train(model, train_dataloader, device, forward, learning_rate=1e-4,
                     continue
 
                 for batch in batches:
-                    logits = forward(model, batch[2:], device)
+                    logits = model(batch[2:])
 
                     labs = batch[5].to(device).detach()
                     k, targets = labs.count_nonzero(), labs.nonzero().detach()
@@ -92,7 +89,7 @@ def train(model, train_dataloader, device, forward, learning_rate=1e-4,
     return global_step, tr_loss / global_step
 
 
-def evaluate(model, eval_dataloader, device, forward):
+def evaluate(model, eval_dataloader, device):
     eval_loss = 0.0
     nb_eval_steps = 0
     accuracy = 0
@@ -117,7 +114,7 @@ def evaluate(model, eval_dataloader, device, forward):
             logits_list = []
 
             for batch in batches:
-                logits = forward(model, batch[2:], device)
+                logits = model(batch[2:])
                 targets = torch.max(batch[5].to(device), -1).indices.to(device).detach()
                 #batch_loss += loss_function(logits, targets)#, batch[3].to(device).detach())
                 batch_loss += loss_function(logits.unsqueeze(dim=0), targets.unsqueeze(dim=-1))

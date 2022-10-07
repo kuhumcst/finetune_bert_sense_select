@@ -30,7 +30,7 @@ def main(k_folds, num_epochs, training, testing=None,
 
     model_name = 'Maltehb/danish-bert-botxo'
     model_type = 'bert_base'
-    model, tokenizer, forward = get_model_and_tokenizer(model_name, model_type, device)
+    model, tokenizer = get_model_and_tokenizer(model_name, model_type, device)
 
     # Normal train + test evaluation
     if k_folds < 1:
@@ -46,7 +46,6 @@ def main(k_folds, num_epochs, training, testing=None,
         n_steps, loss = train(model,
                               data_loader,
                               device,
-                              forward,
                               learning_rate=learning_rate,
                               num_epochs=num_epochs)
 
@@ -54,7 +53,7 @@ def main(k_folds, num_epochs, training, testing=None,
         print(f'Training loss: {loss}')
 
         print('\nEvaluating model on training...')
-        train_loss, train_accuracy, train_accuracy2 = evaluate(model, data_loader, device, forward)
+        train_loss, train_accuracy, train_accuracy2 = evaluate(model, data_loader, device)
         # Print accuracy
         print(f'Train-evaluation loss: {train_loss}')
         print(f'Train accuracy: {100 * train_accuracy, 100 * train_accuracy2}')
@@ -71,7 +70,7 @@ def main(k_folds, num_epochs, training, testing=None,
                                  collate_fn=collate_batch)
 
         print('\nEvaluating model on test data...')
-        test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device, forward)
+        test_loss, test_accuracy, test_accuracy2 = evaluate(model, data_loader, device)
 
         # Print accuracy
         print(f'Test loss: {test_loss}')
@@ -107,13 +106,12 @@ def main(k_folds, num_epochs, training, testing=None,
                                      sampler=test_subsampler,
                                      collate_fn=collate_batch)
             if fold > 0:
-                model, tokenizer1, forward = get_model_and_tokenizer(model_name, model_type, device)
+                model, tokenizer1 = get_model_and_tokenizer(model_name, model_type, device)
 
             print('Training model...\n')
             n_steps, loss = train(model,
                                   train_loader,
                                   device,
-                                  forward,
                                   learning_rate=learning_rate,
                                   num_epochs=num_epochs)
 
@@ -132,7 +130,7 @@ def main(k_folds, num_epochs, training, testing=None,
             print(f'Train accuracy for fold {fold}: {100 * train_accuracy}')
 
             print('\nEvaluating model on test data...')
-            test_loss, test_accuracy, test_accuracy2 = evaluate(model, test_loader, device, forward)
+            test_loss, test_accuracy, test_accuracy2 = evaluate(model, test_loader, device)
 
             # Print accuracy
             print(f'Test loss for fold {fold}: {test_loss}')
