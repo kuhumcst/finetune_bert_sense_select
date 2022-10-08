@@ -69,7 +69,7 @@ class BertSense(BertPreTrainedModel):
         self.dropout = torch.nn.Dropout(self.config.hidden_dropout_prob)
         self.relu = torch.nn.LeakyReLU()
         self.out = torch.nn.Linear(self.config.hidden_size, 2)
-        self.softmax = torch.nn.Softmax(dim=1)
+        self.softmax = torch.nn.Softmax()
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
                 inputs_embeds=None, output_attentions=None, return_dict=None):
@@ -138,7 +138,7 @@ class BertSenseToken(BertPreTrainedModel):
         self.reduce = torch.nn.Linear(config.hidden_size, 192)
         self.combine = torch.nn.Linear(192 * 2, 192)
         self.out = torch.nn.Linear(192, 2)
-        self.softmax = torch.nn.Softmax(dim=1)
+        self.softmax = torch.nn.Softmax()
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
                 inputs_embeds=None, output_attentions=None, return_dict=None):
@@ -164,17 +164,22 @@ class BertSenseToken(BertPreTrainedModel):
 
         bert_out = self.dropout(new_output)
 
-        # returns the last hidden layer of the classification token further processed by a Linear layer
-        # and a leaky ReLU activation function
-        linear = self.reduce(self.activation1(bert_out))
+        def get_for_batch(output):
 
-        # combines the two token representations through a linear layer + a Tanh activation function
-        linear = self.combine(self.activation2(linear))
-        # class_out = model.out(linear)
-        class_out = self.softmax(self.out(linear))
-        class_out = self.softmax(class_out)
+            # returns the last hidden layer of the classification token further processed by a Linear layer
+            # and a leaky ReLU activation function
+            linear1 = self.reduce(self.activation1(output)[:768])
+            linear2 = self.reduce(self.activation1(output)[768:])
+            linear_combined = torch.stack([linear1, linear2], dim=1).view(-1)
+            # combines the two token representations through a linear layer + a Tanh activation function
+            linear = self.combine(self.activation2(linear_combined))
+            # class_out = model.out(linear)
+            class_out = self.softmax(self.out(linear))
+            return self.softmax(class_out).squeeze()[0]
 
-        return class_out.squeeze()[0]
+        class_out = torch.stack([get_for_batch(bert_out[i, :]) for i in range(batch_size)]).view(-1)
+
+        return class_out
 
     def forward_cos(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None,
                     inputs_embeds=None, output_attentions=None, return_dict=None):
